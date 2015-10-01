@@ -1,6 +1,5 @@
 {% extends "main.html" %}
 {% block head %}
-<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 <script src="https://netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
 <script type="text/javascript" charset="utf-8">
 $(document).on('click', '#sendcatalog',function(event){
@@ -53,7 +52,9 @@ $(document).on('click', '#popdeleteitem',function(event){
   <div class="row">
     <div class="content_container col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12">
 <div>
+    {% if login_session['user_id'] == item.user_id %}
     <div class="right"><h6><a href="#" data-toggle="modal" data-target="#newModal" id =popedititem>Edit</a>/<a href="#" data-toggle="modal" data-target="#newModal" id =popdeleteitem>Delete</a></h6></div>
+    {% endif %}
     <div><h2>{{item.name}}</h2></div>
     <div>
           {% if item.picture %}

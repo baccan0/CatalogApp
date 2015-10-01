@@ -11,7 +11,12 @@
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="#">login</a></li>
+            {% if not login_session['credentials'] %}
+            <li><a href="{{url_for('login_page')}}">login</a></li>
+            {% else %}
+            <li><a href="#">{{login_session['username']}}</a></li>
+            <li><a href="{{url_for('logout_page')}}">logout</a></li>
+            {% endif %}
           </ul>
         </div><!-- /.nav-collapse -->
       </div><!-- /.container -->

@@ -1,7 +1,6 @@
 {% extends "main.html" %}
 
 {% block head %}
-<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 <script src="https://netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
 <script type="text/javascript" charset="utf-8">
    $(document).on('click', '#sendcatalog',function(event){
@@ -14,18 +13,20 @@
      $("#newModalLabel").empty().append("New");
      $("#modalbodynew").empty().append('<form role ="form" action="{{url_for("new_catalog_page")}}" method="post" id="catalogform"><div class="form-group"> <label for="name">name</label> <input type="text" class="form-control" name="name" id="namebox"></input></div></form>');
 });
+{% if cat %}
 $(document).on('click', '#popedit',function(event){
      $("#newModalLabel").empty().append("Edit");
-     $("#modalbodynew").empty().append('<form action="{{url_for("catalog_edit_page", catalog_id=active_id)}}" method="post" id="catalogform"><div class="form-group"> <label for="name">name</label> <input type="text" class="form-control" name="name" id="namebox"></input></div></form>');
+     $("#modalbodynew").empty().append('<form action="{{url_for("catalog_edit_page", catalog_id=cat.id)}}" method="post" id="catalogform"><div class="form-group"> <label for="name">name</label> <input type="text" class="form-control" name="name" id="namebox"></input></div></form>');
 });
 $(document).on('click', '#popdelete',function(event){
      $("#newModalLabel").empty().append("Delete");
-     $("#modalbodynew").empty().append('<form role ="form" action="{{url_for("catalog_delete_page", catalog_id=active_id)}}" method="post" id="catalogform"><label for="name">Are you sure to delete this Catalog?</label></form>');
+     $("#modalbodynew").empty().append('<form role ="form" action="{{url_for("catalog_delete_page", catalog_id=cat.id)}}" method="post" id="catalogform"><label for="name">Are you sure to delete this Catalog?</label></form>');
 });
 $(document).on('click', '#popnewitem',function(event){
      $("#newModalLabel").empty().append("New Item");
-     $("#modalbodynew").empty().append('<form role ="form" action="{{url_for("item_new_page", catalog_id=active_id)}}" method="post" id="catalogform"><div class="form-group"> <label for="name">name</label> <input type="text" class="form-control" name="name" id="namebox"></input></div><div class="form-group"> <label for="name">picture</label> <input type="text" class="form-control" name="picture" ></input></div><div class="form-group"> <label for="name">description</label> <input type="text" class="form-control" name="description" ></input></div></form>');
+     $("#modalbodynew").empty().append('<form role ="form" action="{{url_for("item_new_page", catalog_id=cat.id)}}" method="post" id="catalogform"><div class="form-group"> <label for="name">name</label> <input type="text" class="form-control" name="name" id="namebox"></input></div><div class="form-group"> <label for="name">picture</label> <input type="text" class="form-control" name="picture" ></input></div><div class="form-group"> <label for="name">description</label> <input type="text" class="form-control" name="description" ></input></div></form>');
 });
+{% endif %}
     </script>
 {% endblock %}
 
@@ -65,27 +66,31 @@ $(document).on('click', '#popnewitem',function(event){
         <ul class="nav nav-sidebar">
           <li><h3>Catagory</h3>
           </li>
-          {% for cat in catalog %}
-          {% if cat.id == active_id %}
+          {% for c in catalog %}
+          {% if c==cat %}
            <li class="active">
           {% else %}
            <li>
           {% endif %}
-          <a href="{{url_for('catalog_page', catalog_id = cat.id)}}">{{cat.name}}</a>
+          <a href="{{url_for('catalog_page', catalog_id = c.id)}}">{{c.name}}</a>
     
           </li>
           {% endfor %}
+          {% if login_session['username'] %}
           <li   data-toggle="modal" data-target="#newModal" id=popnew>
              <a class ="sidebar-divider-top" href="#">New</a>
           </li>
+          {% endif%}
          </ul>
       </div>
 
        <div class="col-lg-9 col-md-9 main">
        <div>
-          <h3>{{subtitle}}</h3>
-           {% if active_id %}
+          {% if cat %}
+          <h3>{{cat.name}}</h3>
+           {% if login_session['user_id'] == cat.user_id %}
           <a href="#" data-toggle="modal" data-target="#newModal" id="popedit">Edit</a>/<a href="#" data-toggle="modal" data-target="#newModal" id="popdelete">Delete</a>
+          {% endif %}
           {% endif %}
        </div>
        <div class="row items">
@@ -108,7 +113,7 @@ $(document).on('click', '#popnewitem',function(event){
           </a>
          </div>
        {% endfor %}
-        {% if active_id %}
+        {% if cat and login_session['username'] %}
         <div class="col-lg-6 col-md-6 item">
           <a href="#" data-toggle="modal" data-target="#newModal" id="popnewitem">
               <img class="center" src="{{url_for('static', filename = 'plus.png')}}" width="160" height="160">
