@@ -10,9 +10,9 @@
 {% include "nav.html" %}
 <div class="container">
   <div class="row">
-    <div class="content_container col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12">
-      {% if not login_session['credentials'] %}
-      <div id = "signinButton">
+    <div class="content_container col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12" style="padding-top:20px;padding-bottom:20px;">
+      {% if not login_session.get('username') %}
+      <div class = "signinButton">
          <span class="g-signin"
                data-scope="openid email"
                data-clientid="679930743430-lmbbhmfv3cc4f813ihfhvianef87rlt9.apps.googleusercontent.com"
@@ -22,6 +22,10 @@
                data-callback="signInCallback"
                data-approvalprompt="force">
           </span>
+      </div>
+      <div class = "signinButton">
+        <a href="https://github.com/login/oauth/authorize?scope=user&client_id=753c780d867642d342c3&state={{state}}"><img src="{{url_for('static', filename = 'github-logo.png')}}" width ="150px">
+                  </img></a>
       </div>
       <div id="result"></div>
       {% else %}
@@ -34,7 +38,7 @@
 function signInCallback(authResult) {
   if (authResult['code']) {
     // Hide the sign-in button now that the user is authorized
-    $('#signinButton').attr('style', 'display: none');
+    $('.signinButton').attr('style', 'display: none');
     // Send the one-time-use code to the server, if the server responds, write a 'login successful' message to the web page and then redirect back to the main restaurants page
     $.ajax({
       type: 'POST',

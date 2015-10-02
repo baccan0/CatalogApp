@@ -13,17 +13,10 @@ engine = create_engine('sqlite:///catlog.db')
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
-# A DBSession() instance establishes all conversations with the database
-# and represents a "staging zone" for all the objects loaded into the
-# database session object. Any change made against the objects in the
-# session won't be persisted into the database until you call
-# session.commit(). If you're not happy about the changes, you can
-# revert all of them back to the last commit by calling
-# session.rollback()
 session = DBSession()
 
 
-# Create dummy user
+# Create an special user
 user1 = User(name="admin",
              picture='https://lh3.googleusercontent.com/-v_3iOVC5VI0/AAAAAAAAAAI/AAAAAAAAAAA/ye0_gnqSwI4/s120-c/photo.jpg',
              last_login = now())

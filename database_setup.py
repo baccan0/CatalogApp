@@ -15,6 +15,7 @@ class User(Base):
     picture = Column(String(250))
     last_login = Column(DateTime,default = now())
     datetime = Column(DateTime)
+    # return a string to express the last_login time
     @property
     def time_str(self):
         return "".join([str(self.last_login.year), '-', 
@@ -41,6 +42,7 @@ class Catalog(Base):
     user_id = Column(Integer, ForeignKey("user.id"))
     user = relationship(User)
     last_edit = Column(DateTime, default= now())
+    # return a string to express the last_edit time
     @property
     def time_str(self):
         return "".join([str(self.last_edit.year), '-', 
@@ -73,6 +75,7 @@ class Item(Base):
     last_edit = Column(DateTime,default = now())
     user = relationship(User)
     catalog = relationship(Catalog)
+    # return a string to express the last_edit time
     @property
     def time_str(self):
         return "".join([str(self.last_edit.year), '-', 
@@ -95,8 +98,7 @@ class Item(Base):
        }
 
 
-
+# create the database.
 engine = create_engine('sqlite:///catlog.db')
- 
 
 Base.metadata.create_all(engine)

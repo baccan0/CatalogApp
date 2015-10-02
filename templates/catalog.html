@@ -3,12 +3,14 @@
 {% block head %}
 <script src="https://netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
 <script type="text/javascript" charset="utf-8">
+   // respond to the yes button on the modal dialog and send the respective form.
    $(document).on('click', '#sendcatalog',function(event){
      var message = $("#namebox").val();
      if(message != ""){
      $("#catalogform").submit();
 }
 });
+   // change the appearance of the modal dialog.
    $(document).on('click', '#popnew',function(event){
      $("#newModalLabel").empty().append("New");
      $("#modalbodynew").empty().append('<form role ="form" action="{{url_for("new_catalog_page")}}" method="post" id="catalogform"><div class="form-group"> <label for="name">name</label> <input type="text" class="form-control" name="name" id="namebox"></input></div></form>');
@@ -31,6 +33,7 @@ $(document).on('click', '#popnewitem',function(event){
 {% endblock %}
 
 {% block content %}
+<!-- modal dialog which can create/edit/delete catagory/item -->
 <div class="modal fade" id="newModal" tabindex="-1" role="dialog" 
    aria-labelledby="newModalLabel" aria-hidden="true">
    <div class="modal-dialog">
@@ -57,11 +60,13 @@ $(document).on('click', '#popnewitem',function(event){
       </div><!-- /.modal-content -->
   </div><!-- /.modal -->
 </div>
+<!-- navigation bar -->
 {% include "nav.html" %}
 
 <div class="container">
   <div class="row">
     <div class="content_container col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 col-sm-12">
+      <!-- side bar -->
       <div class="col-lg-3 col-md-3 sidebar">
         <ul class="nav nav-sidebar">
           <li><h3>Catagory</h3>
@@ -76,19 +81,22 @@ $(document).on('click', '#popnewitem',function(event){
     
           </li>
           {% endfor %}
-          {% if login_session['username'] %}
+          
+          {% if login_session.get('username') %}
+          <!--button for creating new catalogy-->
           <li   data-toggle="modal" data-target="#newModal" id=popnew>
              <a class ="sidebar-divider-top" href="#">New</a>
           </li>
           {% endif%}
          </ul>
       </div>
-
+      <!-- main content -->
        <div class="col-lg-9 col-md-9 main">
        <div>
           {% if cat %}
           <h3>{{cat.name}}</h3>
-           {% if login_session['user_id'] == cat.user_id %}
+           {% if login_session.get('user_id') == cat.user_id %}
+          <!--link to edit and delete catagory-->
           <a href="#" data-toggle="modal" data-target="#newModal" id="popedit">Edit</a>/<a href="#" data-toggle="modal" data-target="#newModal" id="popdelete">Delete</a>
           {% endif %}
           {% endif %}
@@ -113,7 +121,8 @@ $(document).on('click', '#popnewitem',function(event){
           </a>
          </div>
        {% endfor %}
-        {% if cat and login_session['username'] %}
+        {% if cat and login_session.get('username') %}
+         <!--button for creating new item-->
         <div class="col-lg-6 col-md-6 item">
           <a href="#" data-toggle="modal" data-target="#newModal" id="popnewitem">
               <img class="center" src="{{url_for('static', filename = 'plus.png')}}" width="160" height="160">
