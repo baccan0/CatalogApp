@@ -31,6 +31,13 @@ APPLICATION_NAME = "Catalog App"
 GIT_CLIENT_ID = '753c780d867642d342c3'
 GIT_CLIENT_SECRET = 'a19fe519bed14ae275fdf5e35d8252036d100458'
 
+def login_required(func):
+    def wraper(*args, **kwargs):
+        if 'username' not in login_session:
+            return redirect(url_for('login_page'))
+        return func(*args, **kwargs)
+    return wraper
+
 # login using github.
 @app.route('/gitconnect')
 def git_connect_page():
@@ -61,11 +68,13 @@ def git_connect_page():
     url = ('https://api.github.com/user?access_token=%s' % token)
     user_request = requests.get(url)
     login_session['username'] = json.loads(user_request.content)['login']
+    login_session['picture'] = None
     
     # try to find the user in database, users are distinguished by user email.
     user_id = getUserID(login_session['email'])
     if user_id is None:
         user_id = createUser(login_session)
+    login_session['user_id'] = user_id
 
     flash("You have login as %s" % login_session['username'])
     # return a welcome page which will redirect to cover_page in 1 sec
@@ -102,7 +111,7 @@ def g_disconnect_page():
         response = make_response(render_template("error.html", code =401, message = "user not log in"), 401)
         return response
     # revoke the token.
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % credentials.access_token
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % credentials
     print url
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
@@ -137,7 +146,7 @@ def g_connect_page():
         response = make_response(json.dumps('Failed to upgrade the authorization code.'), 401)
         response.headers['Content-type'] = 'application/json'
         return response
-    access_token =credentials.access_token
+    access_token = credentials.access_token
     # check the token's validity.
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s' % access_token) 
     h = httplib2.Http()
@@ -159,15 +168,15 @@ def g_connect_page():
     stored_credentials = login_session.get('credentials')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_credentials is not None and gplus_id == stored_gplus_id:
-        login_session['credentials'] = credentials
+        login_session['credentials'] = access_token
         response = make_response(json.dumps('Current user is already connected.', 200))
         response.headers['Content-type'] = 'application/json'
         return response
     # login and fetch userinfo. if this is the first time to login, register the user.
-    login_session['credentials'] = credentials
+    login_session['credentials'] = access_token
     login_session['gplus_id'] = gplus_id
     userinfo_url = "https://www.googleapis.com/oauth2/v1/userinfo"
-    params = {'access_token':credentials.access_token, 'alt': 'json'}
+    params = {'access_token':access_token, 'alt': 'json'}
     answer = requests.get(userinfo_url,params = params)
     data = answer.json()
     login_session['provider'] = 'gplus'
@@ -232,11 +241,10 @@ def cover_page():
     return render_template("catalog.html", catalog = catalog, item = lastest, login_session = login_session, cat = None)
 
 # create a new catalog.
+@login_required
 @app.route('/catalog/new', methods = ['POST'])
 def new_catalog_page():
     # only logined users can make a new catagory in database.
-    if 'username' not in login_session:
-        return redirect(url_for('login_page'))
     if request.method == 'POST':
         new_catalog = Catalog(name = request.form['name'], user = getUserInfo(login_session['user_id']))
         session.add(new_catalog)
@@ -258,10 +266,9 @@ def catalog_page(catalog_id):
         return make_response(render_template("error.html", code =404, message = "file not found"), 404)
 
 # edit catagory's name.
+@login_required
 @app.route('/catalog/<int:catalog_id>/edit',methods=['POST'])
 def catalog_edit_page(catalog_id):
-    if 'username' not in login_session:
-        return redirect(url_for('login_page'))
     if request.method == "POST":
         # only the author can change the catagory.
         selected_catalog = session.query(Catalog).filter_by(id = catalog_id).one()
@@ -275,17 +282,21 @@ def catalog_edit_page(catalog_id):
         return redirect(url_for("catalog_page", catalog_id = catalog_id))
 
 # delete catagory
+@login_required
 @app.route('/catalog/<int:catalog_id>/delete',methods=['POST'])
 def catalog_delete_page(catalog_id):
-    if 'username' not in login_session:
-        return redirect(url_for('login_page'))
     if request.method == "POST":
         selected_catalog = session.query(Catalog).filter_by(id = catalog_id).one()
         # only the author can delete the catagory.
         if login_session['user_id'] != selected_catalog.user_id:
             return make_response(render_template("error.html", code =401, message = "you don't have authorization to make this change"), 401)
+        affected_items = session.query(Item).filter_by(catalog_id = catalog_id).all()
+        for item in affected_items:
+            session.delete(item)
+            flash('Item %s successfully deleted' % item.name)
+        session.commit()
         session.delete(selected_catalog)
-        flash('Catalog %s sucessfully deleted' % selected_catalog.name)
+        flash('Catalog %s successfully deleted' % selected_catalog.name)
         session.commit()
         return redirect(url_for("cover_page"))
 
@@ -299,10 +310,9 @@ def item_page(item_id):
         return make_response(render_template("error.html", code =404, message = "file not found"), 404)
 
 # create a new item.
+@login_required
 @app.route('/item/<int:catalog_id>/new', methods=['POST'])
 def item_new_page(catalog_id):
-    if 'username' not in login_session:
-        return redirect(url_for('login_page'))
     if request.method == 'POST':
         cat = session.query(Catalog).filter_by(id = catalog_id).one()
         new_item = Item(name = request.form['name'], catalog = cat, user = getUserInfo(login_session['user_id']))
@@ -317,10 +327,9 @@ def item_new_page(catalog_id):
         return redirect(url_for("item_page", item_id = item.id))
 
 # edit an item.
+@login_required
 @app.route('/item/<int:item_id>/edit', methods=['POST'])
 def item_edit_page(item_id):
-    if 'username' not in login_session:
-        return redirect(url_for('login_page'))
     if request.method == "POST":
         selected_item = session.query(Item).filter_by(id = item_id).one()
         if login_session['user_id'] != selected_item.user_id:
@@ -339,10 +348,9 @@ def item_edit_page(item_id):
         return redirect(url_for("item_page", item_id = selected_item.id))
 
 # delete an item.
+@login_required
 @app.route('/item/<int:item_id>/delete', methods=['POST'])
 def item_delete_page(item_id):
-    if 'username' not in login_session:
-        return redirect(url_for('login_page'))
     if request.method == "POST":
         selected_item = session.query(Item).filter_by(id = item_id).one()
         if login_session['user_id'] != selected_item.user_id:
